@@ -1,6 +1,6 @@
 -- Source: https://jessehouwing.net/tfs-clean-up-your-project-collection/
 -- Gets largest content contributors by type
--- Tweaked to get GB's instead of MB's
+-- Tweaked to get INT result for MB's (more readability)
 
 SELECT Owner = 
     CASE
@@ -22,7 +22,7 @@ SELECT Owner =
         WHEN OwnerId = 15 THEN 'BlobStore'
         WHEN OwnerId = 255 THEN 'PendingDeletion'
     END,
-    SUM(CompressedLength) / 1024.0 / 1024.0 / 1024.0 AS BlobSizeInGB
+    CONVERT(INT, ROUND((SUM(CompressedLength) / 1024.0 / 1024.0), 0)) AS BlobSizeInMB
 FROM tbl_FileReference AS r
 JOIN tbl_FileMetadata AS m
     ON r.ResourceId = m.ResourceId
