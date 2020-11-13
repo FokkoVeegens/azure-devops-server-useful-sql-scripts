@@ -3,5 +3,5 @@
 
 EXEC prc_CleanupDeletedFileContent 1
 
--- Run this multiple times, it performs a batch of 100000
-EXEC prc_DeleteUnusedFiles 1, 0, 100000
+-- 500 is the batch size, default is 100. Increase this and it might be faster, but will consume a lot of resources (disk activity and TempDB space!)
+EXEC prc_DeleteUnusedFiles 1, 0, 500
