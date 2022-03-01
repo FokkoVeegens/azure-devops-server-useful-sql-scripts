@@ -3,13 +3,15 @@
 -- The queries are based on a query written by Jesse Houwing and it can be found here: https://jessehouwing.net/tfs-clean-up-your-project-collection/
 
 DECLARE @partitionId INT = 1
+DECLARE @toreplace VARCHAR(255) = 'vstfs:///Build/Build/'
  
-select d.DefinitionId,
-             d.DefinitionName,
-             SUM(cast(ci.FileLength as decimal(38)))/1024.0/1024.0 AS ArtifactSizeInMb,
-             d.Deleted
-from tbl_Container c
-       left outer join    (
+SELECT p.ProjectName,
+       d.BuildPipelineId,
+       d.BuildPipelineName,
+       SUM(CAST(ci.FileLength AS DECIMAL(38)))/1024.0/1024.0 AS ArtifactSizeInMb,
+       d.IsDeleted
+FROM tbl_Container c
+       LEFT OUTER JOIN (
             SELECT  ci.FileId,
                     ci.DataspaceId,
                     MAX(ci.FileLength) AS FileLength,
@@ -17,20 +19,26 @@ from tbl_Container c
             FROM    tbl_ContainerItem ci
             WHERE   ci.PartitionId = @partitionId
             GROUP BY ci.FileId, ci.DataspaceId
-        ) AS ci ON ci.ContainerId = c.ContainerId
-       inner join Build.tbl_Build b on convert(int, replace(c.ArtifactUri,'vstfs:///Build/Build/','')) = b.BuildId
-       inner join Build.tbl_Definition d on b.DefinitionId = d.DefinitionId
-where c.ArtifactUri like 'vstfs:///Build/Build/%'
-GROUP BY d.DefinitionId,
-             d.DefinitionName,
-             d.Deleted
+            ) AS ci ON ci.ContainerId = c.ContainerId
+       INNER JOIN Build.tbl_Build b on CASE CHARINDEX('?', c.ArtifactUri)
+                                          WHEN 0 THEN REPLACE(c.ArtifactUri, @toreplace, '')
+                                          ELSE CONVERT(int, LEFT(REPLACE(c.ArtifactUri, @toreplace, ''), CHARINDEX('?', c.ArtifactUri) - LEN(@toreplace) - 1))
+                                       END = b.BuildId
+       INNER JOIN AnalyticsModel.tbl_BuildPipeline d ON b.DefinitionId = d.BuildPipelineId
+       INNER JOIN AnalyticsModel.tbl_Project p ON d.ProjectSK = p.ProjectSK
+WHERE c.ArtifactUri LIKE 'vstfs:///Build/Build/%'
+GROUP BY p.ProjectName,
+         d.BuildPipelineId,
+         d.BuildPipelineName,
+         d.IsDeleted
  
-select d.DefinitionId,
-             d.DefinitionName,
-             SUM(cast(ci.FileLength as decimal(38)))/1024.0/1024.0 AS LogSizeInMb,
-             d.Deleted
-from tbl_Container c
-       left outer join    (
+SELECT p.ProjectName,
+       d.BuildPipelineId,
+       d.BuildPipelineName,
+       SUM(CAST(ci.FileLength AS DECIMAL(38)))/1024.0/1024.0 AS ArtifactSizeInMb,
+       d.IsDeleted
+FROM tbl_Container c
+       LEFT OUTER JOIN (
             SELECT  ci.FileId,
                     ci.DataspaceId,
                     MAX(ci.FileLength) AS FileLength,
@@ -38,10 +46,15 @@ from tbl_Container c
             FROM    tbl_ContainerItem ci
             WHERE   ci.PartitionId = @partitionId
             GROUP BY ci.FileId, ci.DataspaceId
-        ) AS ci ON ci.ContainerId = c.ContainerId
-       inner join Build.tbl_Build b on convert(int, replace(c.SecurityToken,'vstfs:///Build/Build/','')) = b.BuildId
-       inner join Build.tbl_Definition d on b.DefinitionId = d.DefinitionId
-where c.ArtifactUri like 'pipelines://build/%'
-GROUP BY d.DefinitionId,
-             d.DefinitionName,
-             d.Deleted
+            ) AS ci ON ci.ContainerId = c.ContainerId
+       INNER JOIN Build.tbl_Build b ON CASE CHARINDEX('?', c.SecurityToken)
+                                          WHEN 0 THEN REPLACE(c.SecurityToken, @toreplace, '')
+                                          ELSE CONVERT(int, LEFT(REPLACE(c.SecurityToken, @toreplace, ''), CHARINDEX('?', c.SecurityToken) - LEN(@toreplace) - 1)) 
+                                       END = b.BuildId
+       INNER JOIN AnalyticsModel.tbl_BuildPipeline d ON b.DefinitionId = d.BuildPipelineId
+       INNER JOIN AnalyticsModel.tbl_Project p ON d.ProjectSK = p.ProjectSK
+WHERE c.ArtifactUri LIKE 'pipelines://build/%'
+GROUP BY p.ProjectName,
+         d.BuildPipelineId,
+         d.BuildPipelineName,
+         d.IsDeleted
