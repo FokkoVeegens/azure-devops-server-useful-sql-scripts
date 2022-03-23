@@ -5,6 +5,8 @@
 DECLARE @partitionId INT = 1
 DECLARE @toreplace VARCHAR(255) = 'vstfs:///Build/Build/'
  
+-- Build Artifacts
+
 SELECT p.ProjectName,
        d.BuildPipelineId,
        d.BuildPipelineName,
@@ -31,11 +33,13 @@ GROUP BY p.ProjectName,
          d.BuildPipelineId,
          d.BuildPipelineName,
          d.IsDeleted
- 
+
+-- Build logs
+
 SELECT p.ProjectName,
        d.BuildPipelineId,
        d.BuildPipelineName,
-       SUM(CAST(ci.FileLength AS DECIMAL(38)))/1024.0/1024.0 AS ArtifactSizeInMb,
+       SUM(CAST(ci.FileLength AS DECIMAL(38)))/1024.0/1024.0 AS LogsSizeInMb,
        d.IsDeleted
 FROM tbl_Container c
        LEFT OUTER JOIN (
