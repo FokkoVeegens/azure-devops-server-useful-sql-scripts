@@ -2,7 +2,7 @@
 
 Scripts I collected over time to do analysis over the Azure DevOps Server database
 
-** DEPRECATED **
+**DEPRECATED**
 
 If you're looking for one of the scripts below, please head over to my new [Azure DevOps Administration repository](https://github.com/FokkoVeegens/azure-devops-administration)
 
